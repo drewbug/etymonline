@@ -24,22 +24,6 @@ class Neovigator < Sinatra::Application
     end
   end
 
-  def create_graph
-    graph_exists = neo.get_node_properties(1)
-    return if graph_exists && graph_exists['name']
-
-    johnathan = create_person('Johnathan')
-    mark      = create_person('Mark')
-    phil      = create_person('Phil')
-    mary      = create_person('Mary')
-    luke      = create_person('Luke')
-    make_mutual(johnathan, mark, "friends")
-    make_mutual(mark, mary, "friends")
-    make_mutual(mark, phil, "friends")
-    make_mutual(phil, mary, "married")
-    make_mutual(phil, luke, "enemies")
-  end
-
   def make_mutual(node1, node2, rel_type)
     neo.create_relationship(rel_type, node1, node2)
     neo.create_relationship(rel_type, node2, node1)
@@ -115,7 +99,6 @@ class Neovigator < Sinatra::Application
   end
 
   get '/' do
-    create_graph
     @neoid = params["neoid"]
     haml :index
   end
