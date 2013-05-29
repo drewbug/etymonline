@@ -14,7 +14,7 @@ class Neovigator < Sinatra::Application
   set :app_file, __FILE__
 
   configure do
-    @@building = false
+    @@updating = false
   end
 
   configure :test do
@@ -117,21 +117,16 @@ class Neovigator < Sinatra::Application
 
   get '/admin/' do
     node_count = neo.execute_query("START n=node(*) RETURN count(n)")['data'][0][0]
-    erb :admin, :locals => {:node_count => node_count, :building => @@building}
+    erb :admin, :locals => {:node_count => node_count, :updating => @@updating}
   end
 
-  post '/admin/clear' do
-    neo.execute_query("START n=node(*) MATCH n-[r?]-() DELETE n,r")
-    redirect back
-  end
-
-  post '/admin/build' do
-    unless @@building
+  post '/admin/update' do
+    unless @@updating
       Thread.new do
-        @@building = {status: 'building terms list', terms: Set.new}
+        @@updating = {status: 'building terms list', terms: Set.new}
         neo.create_node_index("terms")
         ('a'..'z').each do |letter|
-          @@building[:last_letter] = letter
+          @@updating[:last_letter] = letter
           pages = [0]
           Nokogiri::HTML(open("http://www.etymonline.com/index.php?l=#{letter}")).css('a').each do |link|
             match = link["href"].match(/index.php\?l=#{letter}&p=(\d+)/)
@@ -139,30 +134,30 @@ class Neovigator < Sinatra::Application
             pages << result.to_i unless result.nil?
           end
           (0..pages.uniq.last).each do |page|
-            @@building[:last_page] = [page+1, pages.uniq.last+1]
+            @@updating[:last_page] = [page+1, pages.uniq.last+1]
             Nokogiri::HTML(open("http://www.etymonline.com/index.php?l=#{letter}&p=#{page}")).css('a').each do |link|
               match = link["href"].match(/index.php\?term=([^ &]+)&/)
               result = CGI.unescape(match.captures.first) if match
-              @@building[:terms] << result unless result.nil?
+              @@updating[:terms] << result unless result.nil?
             end
           end
         end
-        @@building[:status] = 'populating database'
-        @@building[:terms].each do |term|
-          @@building[:last_term] = term
+        @@updating[:status] = 'populating database'
+        @@updating[:terms].each do |term|
+          @@updating[:last_term] = term
           if neo.get_node_index('terms', 'term', term)
             node1 = neo.get_node_index('terms', 'term', term)
           else
             node1 = neo.create_node('name' => term)
             neo.add_node_to_index('terms', 'term', term, node1)
           end
-          @@building[:last_node] = node1
+          @@updating[:last_node] = node1
           
           Nokogiri::HTML(open("http://www.etymonline.com/index.php?term=#{CGI.escape(term)}")).css('a').each do |link|
             match = link["href"].match(/index.php\?term=([^ &]+)&/)
             result = CGI.unescape(match.captures.first) if match
             if result
-              @@building[:last_relationship] = [term, result]
+              @@updating[:last_relationship] = [term, result]
               if neo.get_node_index('terms', 'term', result)
                 node2 = neo.get_node_index('terms', 'term', result)
               else
@@ -175,7 +170,7 @@ class Neovigator < Sinatra::Application
             end
           end
         end
-        @@building = false
+        @@updating = false
       end
     end
     redirect back
