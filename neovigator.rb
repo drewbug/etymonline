@@ -120,4 +120,8 @@ class Neovigator < Sinatra::Application
     haml :index
   end
 
+  get '/admin' do
+    "Node Count: #{@neo.execute_query("start n=node(*) return count(n)")['data'][0][0]}",
+  end
+
 end
