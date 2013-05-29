@@ -78,9 +78,9 @@ class Neovigator < Sinatra::Application
        rel = c["relationships"][0]
 
        if rel["end"] == node["self"]
-         incoming["Incoming:#{rel["type"]}"] << {:values => nodes[rel["start"]].merge({:id => node_id(rel["start"]) }) }
+         incoming["Incoming"] << {:values => nodes[rel["start"]].merge({:id => node_id(rel["start"]) }) }
        else
-         outgoing["Outgoing:#{rel["type"]}"] << {:values => nodes[rel["end"]].merge({:id => node_id(rel["end"]) }) }
+         outgoing["Outgoing"] << {:values => nodes[rel["end"]].merge({:id => node_id(rel["end"]) }) }
        end
     end
 

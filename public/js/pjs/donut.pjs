@@ -184,7 +184,7 @@ public class DonutSegment {
        curContext.fillText(this.slices.size(), donut.x, donut.y+15);
        
        curContext.font = "20px GraublauWeb";
-       curContext.fillText("Relationships", donut.x, donut.y+40);
+       curContext.fillText("Links", donut.x, donut.y+40);
 
       curContext.font = "20px GraublauWeb";
       curContext.fillText(this.subject.getName(), donut.x, donut.y-25, 120);
