@@ -14,6 +14,7 @@ GEM
       rake (>= 0.8.7)
       rubyzip
     net-http-spy (0.2.1)
+    nokogiri (1.5.9)
     os (0.9.5)
     rack (1.4.0)
     rack-protection (1.2.0)
@@ -44,6 +45,7 @@ DEPENDENCIES
   json
   neography
   net-http-spy
+  nokogiri
   rack-test
   rspec
   sinatra

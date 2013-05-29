@@ -6,4 +6,7 @@ require 'bundler'
 Bundler.require
 
 require 'neovigator'
+
+$stdout.sync = true
+
 run Neovigator

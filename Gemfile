@@ -4,6 +4,7 @@ gem 'sinatra'
 gem 'neography'
 gem 'haml'
 gem 'json'
+gem 'nokogiri'
 
 group :test do
   gem 'rspec'

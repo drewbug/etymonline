@@ -1,4 +1,13 @@
 <p>Node Count: <%= node_count %></p>
-<form method="post" action="/admin/clear">
-  <input type="submit" value="Delete All Nodes" />
-</form>
+<% if building %>
+  <p><%= "Known Terms: #{building[:terms].size}" %></p>
+  <%= JSON.pretty_generate(building) %>
+  
+<% else %>
+  <form method="post" action="/admin/clear">
+    <input type="submit" value="Delete All Nodes" />
+  </form>
+  <form method="post" action="/admin/build">
+    <input type="submit" value="(Re-)Build Database" />
+  </form>
+<% end %>

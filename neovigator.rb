@@ -2,10 +2,20 @@ require 'rubygems'
 require 'neography'
 require 'sinatra/base'
 require 'uri'
+require 'open-uri'
+require 'net/http'
+require 'json'
+require 'cgi'
+require 'nokogiri'
+require 'set'
 
 class Neovigator < Sinatra::Application
   set :haml, :format => :html5 
   set :app_file, __FILE__
+
+  configure do
+    @@building = false
+  end
 
   configure :test do
     require 'net-http-spy'
@@ -22,15 +32,6 @@ class Neovigator < Sinatra::Application
     def neo
       @neo = Neography::Rest.new(ENV['NEO4J_URL'] || "http://localhost:7474")
     end
-  end
-
-  def make_mutual(node1, node2, rel_type)
-    neo.create_relationship(rel_type, node1, node2)
-    neo.create_relationship(rel_type, node2, node1)
-  end
-
-  def create_person(name)
-    neo.create_node("name" => name)
   end
 
   def neighbours
@@ -63,6 +64,7 @@ class Neovigator < Sinatra::Application
     content_type :json
 
     node = neo.get_node(params[:id]) 
+    if node
     connections = neo.traverse(node, "fullpath", neighbours)
     incoming = Hash.new{|h, k| h[k] = []}
     outgoing = Hash.new{|h, k| h[k] = []}
@@ -82,34 +84,100 @@ class Neovigator < Sinatra::Application
        end
     end
 
-      incoming.merge(outgoing).each_pair do |key, value|
-        attributes << {:id => key.split(':').last, :name => key, :values => value.collect{|v| v[:values]} }
-      end
+    incoming.merge(outgoing).each_pair do |key, value|
+      attributes << {:id => key.split(':').last, :name => key, :values => value.collect{|v| v[:values]} }
+    end
 
-   attributes = [{"name" => "No Relationships","name" => "No Relationships","values" => [{"id" => "#{params[:id]}","name" => "No Relationships "}]}] if attributes.empty?
-
+    attributes = [{"name" => "No Relationships","name" => "No Relationships","values" => [{"id" => "#{params[:id]}","name" => "No Relationships "}]}] if attributes.empty?
     @node = {:details_html => "<h2>Neo ID: #{node_id(node)}</h2>\n<p class='summary'>\n#{get_properties(node)}</p>\n",
-              :data => {:attributes => attributes, 
-                        :name => node["data"]["name"],
-                        :id => node_id(node)}
-            }
-
+             :data => {:attributes => attributes, 
+                       :name => node["data"]["name"],
+                       :id => node_id(node)}
+              }
     @node.to_json
-
+    
+    else
+      nil.to_json
+    end
   end
 
   get '/' do
-    @neoid = params["neoid"]
+    puts @neoid = params["neoid"]
     haml :index
+  end
+  
+  get '/term/:term' do
+    neoid = node_id(neo.get_node_index('terms', 'term', params["term"]).first)
+    redirect "/?neoid=#{neoid}"
   end
 
   get '/admin' do
+    redirect "/admin/"
+  end
+
+  get '/admin/' do
     node_count = neo.execute_query("START n=node(*) RETURN count(n)")['data'][0][0]
-    erb :admin, :locals => {:node_count => node_count}
+    erb :admin, :locals => {:node_count => node_count, :building => @@building}
   end
 
   post '/admin/clear' do
     neo.execute_query("START n=node(*) MATCH n-[r?]-() DELETE n,r")
+    redirect back
+  end
+
+  post '/admin/build' do
+    unless @@building
+      Thread.new do
+        @@building = {status: 'building terms list', terms: Set.new}
+        neo.create_node_index("terms")
+        ('a'..'z').each do |letter|
+          @@building[:last_letter] = letter
+          pages = [0]
+          Nokogiri::HTML(open("http://www.etymonline.com/index.php?l=#{letter}")).css('a').each do |link|
+            match = link["href"].match(/index.php\?l=#{letter}&p=(\d+)/)
+            result = match.captures.first if match
+            pages << result.to_i unless result.nil?
+          end
+          (0..pages.uniq.last).each do |page|
+            @@building[:last_page] = [page+1, pages.uniq.last+1]
+            Nokogiri::HTML(open("http://www.etymonline.com/index.php?l=#{letter}&p=#{page}")).css('a').each do |link|
+              match = link["href"].match(/index.php\?term=([^ &]+)&/)
+              result = CGI.unescape(match.captures.first) if match
+              @@building[:terms] << result unless result.nil?
+            end
+          end
+        end
+        @@building[:status] = 'populating database'
+        @@building[:terms].each do |term|
+          @@building[:last_term] = term
+          if neo.get_node_index('terms', 'term', term)
+            node1 = neo.get_node_index('terms', 'term', term)
+          else
+            node1 = neo.create_node('name' => term)
+            neo.add_node_to_index('terms', 'term', term, node1)
+          end
+          @@building[:last_node] = node1
+          
+          Nokogiri::HTML(open("http://www.etymonline.com/index.php?term=#{CGI.escape(term)}")).css('a').each do |link|
+            match = link["href"].match(/index.php\?term=([^ &]+)&/)
+            result = CGI.unescape(match.captures.first) if match
+            if result
+              @@building[:last_relationship] = [term, result]
+              if neo.get_node_index('terms', 'term', result)
+                node2 = neo.get_node_index('terms', 'term', result)
+              else
+                node2 = neo.create_node('name' => result)
+                neo.add_node_to_index('terms', 'term', result, node2)
+              end
+              if ((term != result) and (node1 != node2))
+                neo.create_relationship("links", node1, node2)
+              end
+            end
+          end
+        end
+        @@building = false
+      end
+    end
     redirect back
   end
 
