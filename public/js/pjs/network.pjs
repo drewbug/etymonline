@@ -66,12 +66,14 @@ void setup() {
   frameRate(30);
 	background(BACKGROUND);
 
-	if (resourceId) {
+	if (resourceId != 0) {
 		r = fetchResource(resourceId);
 		g.addNode(root = new Node(r));
 		g.selectedNode = root;
 		$('#details').html(r.html);
-	}
+	} else if (resourceId == 0) {
+    resourceId = null;
+  }
 }
 
 void draw() {
@@ -131,6 +133,7 @@ void addNode(Value val) {
 
 
 void mousePressed() {
+	if (!resourceId) return;
   
   // ->> g.checkSelected()
   // g.checkSelected(); // updates g.selectedNode if necessary
