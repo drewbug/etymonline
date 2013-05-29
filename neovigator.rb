@@ -121,7 +121,13 @@ class Neovigator < Sinatra::Application
   end
 
   get '/admin' do
-    "Node Count: #{@neo.execute_query("start n=node(*) return count(n)")['data'][0][0]}",
+    node_count = neo.execute_query("START n=node(*) RETURN count(n)")['data'][0][0]
+    erb :admin, :locals => {:node_count => node_count}
+  end
+
+  post '/admin/clear' do
+    neo.execute_query("START n=node(*) MATCH n-[r?]-() DELETE n,r")
+    redirect back
   end
 
 end
