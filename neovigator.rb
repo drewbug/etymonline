@@ -168,7 +168,8 @@ class Neovigator < Sinatra::Application
                 node2 = neo.create_node('name' => result)
                 neo.add_node_to_index('terms', 'term', result, node2)
               end
-              if ((term != result) and (node1 != node2))
+              existing = neo.execute_query("START n1=node(#{node_id(node1.first)}), n2=node(#{node_id(node2.first)}) MATCH n2-[:links]->n1 RETURN count(*)")['data'][0][0]
+              if ((term != result) and (node1 != node2) and (existing == 0))
                 neo.create_relationship("links", node1, node2)
               end
             end
