@@ -168,7 +168,7 @@ class Neovigator < Sinatra::Application
                 neo.add_node_to_index('terms', 'term', result, node2)
               end
               if ((term != result) and (node1 != node2))
-                unless neo.execute_query("START n1=node(#{node_id(node1.first)}), n2=node(#{node_id(node2.first)}) MATCH n1-[:links]->n2 RETURN count(*)")['data'][0][0] != 0
+                unless neo.execute_query("START n1=node(#{node_id(node1.first)}), n2=node(#{node_id(node2.first)}) MATCH n1-[:links]->n2 RETURN count(*)")['data'][0][0] > 0
                   neo.create_relationship("links", node1, node2)
                   @@updating[:last_relationship] = [term, result]
                 end
