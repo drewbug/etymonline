@@ -129,7 +129,7 @@ class Neovigator < Sinatra::Application
       Thread.new do
         @@updating = {status: 'building terms list', terms: Set.new}
         neo.create_node_index("terms")
-        ('x'..'x').each do |letter|
+        ('a'..'z').each do |letter|
           @@updating[:last_letter] = letter
           pages = [0]
           Nokogiri::HTML(open("http://www.etymonline.com/index.php?l=#{letter}")).css('a').each do |link|
