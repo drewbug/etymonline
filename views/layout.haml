@@ -7,14 +7,14 @@
     %script{:src => "/js/ui.js"}
     %script{:src => "/js/processing.min.js"} 
 
-    %title Neovigator
+    %title Etymonline | Crossreferences Visualization
 
   %body
     %canvas#neoviz
     %header
       %section#title
-        %h1 Neovigator
-        %p Neography Browser
+        %h1 Etymonline
+        %p Crossreferences Visualization
       %section#search
         %form{:action => "/", :method => "get"}
           %label Node ID:
@@ -25,7 +25,6 @@
       = yield
     %aside
       %div#explanation
-        / Neovigator introduction
         %h2 About
         %p
           This site is an attempt to visually navigate through Douglas Harper's
