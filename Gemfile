@@ -5,6 +5,7 @@ gem 'neography'
 gem 'haml'
 gem 'json'
 gem 'nokogiri'
+gem 'newrelic_rpm'
 
 group :test do
   gem 'rspec'

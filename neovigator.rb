@@ -22,6 +22,10 @@ class Neovigator < Sinatra::Application
     Net::HTTP.http_logger_options = {:verbose => true} 
   end
 
+  configure :production do
+    require 'newrelic_rpm'
+  end
+
   helpers do
     def link_to(url, text=url, opts={})
       attributes = ""
