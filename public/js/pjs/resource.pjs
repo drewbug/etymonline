@@ -137,6 +137,15 @@ public class Resource {
         that.name = response.data.name;
         that.html = response.details_html;
         
+        $.ajax({  
+          url: "http://query.yahooapis.com/v1/public/yql?q=SELECT * FROM html \x57\x48\x45\x52\x45\x20url=\x22http://www.etymonline.com/index.php?term="+that.name+"\x22 \x41\x4E\x44\x20xpath=\x22//dl\x22&format=xml",  
+          dataType: "jsonp",  
+          success: function(data) {
+            $('#explanation').append(data.results[0]);
+            that.html = that.html + data.results[0];
+          }  
+        });
+        
         $('#explanation').html(response.details_html);
         int numValues = 0;
         for (int i = 0; i < response.data.attributes.length(); i++) {
@@ -151,6 +160,15 @@ public class Resource {
          that.addAttribute(attr);
          that.donut.addSegment(seg);
         }
+        
+        $.ajax({  
+          url: "http://query.yahooapis.com/v1/public/yql?q=SELECT * FROM html \x57\x48\x45\x52\x45\x20url=\x22http://www.etymonline.com/index.php?term="+"\x22 \x41\x4E\x44\x20xpath=\x22//dl\x22&format=xml",  
+          dataType: "jsonp",  
+          success: function(data) {
+            $('#explanation').append(data.results[0]);
+            console.log(data.results[0]);
+          }  
+        });
         
         // kill this node because it's useless with no values at all
         if (numValues==0) {
