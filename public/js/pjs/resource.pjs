@@ -121,6 +121,7 @@ public class Resource {
   public void cbfunc(data) {
     $.each(data.query.results.table, function(i,item) {
       $('#explanation').append(item);
+      $('#explanation').append('hello');
     });
   }
   
