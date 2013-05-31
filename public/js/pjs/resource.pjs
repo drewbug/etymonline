@@ -118,6 +118,12 @@ public class Resource {
     };
   }
   
+  public void cbfunc(data) {
+    $.each(data.query.results.table, function(i,item) {
+      $('#explanation').append(item);
+    });
+  }
+  
   public void fetchData() {
     var json;
     var that = this;
@@ -151,7 +157,14 @@ public class Resource {
          that.addAttribute(attr);
          that.donut.addSegment(seg);
         }
-        
+
+        $.ajax({
+           url: 'http://query.yahooapis.com/v1/public/yql?q=SELECT%20*%20FROM%20html%20WHERE%20url%3D%22http%3A%2F%2Fwww.etymonline.com%2Findex.php%3Fterm%3D'+that.name+'%22%20AND%20xpath%3D%22%2F%2Fdd%22&format=json&diagnostics=true&callback=cbfunc',
+           dataType: 'jsonp',
+           jsonp: 'callback',
+           jsonpCallback: 'cbfunc'
+        });
+
         // kill this node because it's useless with no values at all
         if (numValues==0) {
           g.removeNode(getNodeById(that.id)); // TODO: does not work properly
